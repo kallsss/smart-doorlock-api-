@@ -2,6 +2,7 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from routes.token_routes import token_bp
 from routes.Android.dashboard_routes import android_bp
+from routes.Android.access_routes import access_bp
 from routes.esp.face_routes import facerecog_bp
 from routes.esp.sync_routes import syncusers_bp
 from routes.esp.finger_routes import finger_bp
@@ -24,6 +25,7 @@ jwt = JWTManager(app)
 
 app.register_blueprint(token_bp)
 app.register_blueprint(android_bp)
+app.register_blueprint(access_bp)
 app.register_blueprint(sse_bp)
 app.register_blueprint(syncusers_bp)
 app.register_blueprint(getimage_bp)

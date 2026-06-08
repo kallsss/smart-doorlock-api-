@@ -3,7 +3,7 @@ from config.db import get_db_connection
 
 syncusers_bp = Blueprint("syncusers_bp", __name__)
 
-@syncusers_bp.route('/SyncUsers', methods=['GET'])
+@syncusers_bp.route('/sync/users', methods=['GET'])
 def sync_users():
 
     conn = get_db_connection()

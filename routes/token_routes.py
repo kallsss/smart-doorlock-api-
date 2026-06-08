@@ -7,7 +7,7 @@ import bcrypt
 token_bp = Blueprint("token_bp", __name__)
 
 #TOKEN ANDROID
-@token_bp.route('/login', methods=['POST'])
+@token_bp.route('/auth/login', methods=['POST'])
 def login():
 
     data = request.get_json()
@@ -58,7 +58,7 @@ def login():
     }), 401
 
 #TOKEN ESP 32
-@token_bp.route('/esp/login', methods=['POST'])
+@token_bp.route('/auth/esp', methods=['POST'])
 def esp_login():
 
     data = request.get_json()

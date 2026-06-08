@@ -1,29 +1,36 @@
 from flask import Blueprint, request, jsonify
 from modules.faceRecognition import FaceAuthenticator
+import os
 
 facerecog_bp = Blueprint("facerecog_bp", __name__)
 
-@facerecog_bp.route('/RegisterFace', methods=['POST'])
-def register_face():
+ENROLL_FACE = 32
 
-    user_id = int(request.form.get("user_id"))
-
-    image_files = request.files.getlist("image")
-
-    if len(image_files) == 0:
-
-        return jsonify({
-            "status": "failed",
-            "message": "Tidak ada file wajah"
-        }), 400
-
-    success_count = 0
+@facerecog_bp.route('/users/<int:user_id>/face', methods=['POST'])
+def register_face(user_id):
 
     try:
+        mode = int(request.form.get("mode"))
+       
+        if mode != ENROLL_FACE:
+            return jsonify({
+                "status": "failed",
+                "message": "Mode harus ENROLL_FACE (32)"
+            }), 400
+
+        image_files = request.files.getlist("image")
+
+        if len(image_files) != 3:
+            return jsonify({
+                "status": "failed",
+                "message": "Harus mengirim 3 foto wajah"
+            }), 400
+
+        success_count = 0
 
         for image_file in image_files:
 
-            image_path = f"temp_{image_file.filename}"
+            image_path = f"temp_{user_id}_{success_count}.jpg"
 
             image_file.save(image_path)
 
@@ -37,11 +44,14 @@ def register_face():
 
             success_count += 1
 
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
         return jsonify({
             "status": "success",
             "message": f"{success_count} wajah berhasil diregistrasi",
             "user_id": user_id
-        })
+        }), 200
 
     except Exception as e:
 
@@ -51,10 +61,8 @@ def register_face():
         }), 500
 
 #DELETE FACE
-@facerecog_bp.route('/DeleteFace', methods=['DELETE'])
-def delete_face():
-
-    user_id = request.json.get("user_id")
+@facerecog_bp.route('/users/<int:user_id>/face', methods=['DELETE'])
+def delete_face(user_id):
 
     if not user_id:
         return jsonify({

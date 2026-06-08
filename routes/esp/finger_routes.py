@@ -3,15 +3,36 @@ from config.db import get_db_connection
 from datetime import datetime
 from modules.faceRecognition import FaceAuthenticator
 
+ENROLL_FINGER = 32
+
 finger_bp = Blueprint("finger_bp", __name__)
 
-@finger_bp.route('/RegisterFingerprint', methods=['POST'])
-def enroll_fingerprint():
+@finger_bp.route('/users/<int:user_id>/', methods=['POST'])
+def enroll_fingerprint(user_id):
 
     data = request.get_json()
-
-    user_id = data.get("user_id")
+    mode = data.get("mode")
+    
     door_access = data.get("door_access")
+    enroll_success = data.get("enroll_success")
+
+    if mode != ENROLL_FINGER:
+        return jsonify({
+            "status": "failed",
+            "message": "Mode harus ENROLL_FINGER (32)"
+        }), 400
+
+    if user_id is None:
+        return jsonify({
+            "status": "failed",
+            "message": "user_id wajib diisi"
+        }), 400
+
+    if not enroll_success:
+        return jsonify({
+            "status": "failed",
+            "message": "Fingerprint enrollment gagal"
+        }), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -30,36 +51,55 @@ def enroll_fingerprint():
         user = cur.fetchone()
 
         if user is None:
-
             return jsonify({
                 "status": "failed",
                 "message": "User tidak ditemukan"
             }), 404
 
-        cur.execute(
-            "INSERT INTO fingerprint (user_id, finger_id, door_access) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING",
-            (user_id, user_id, door_access)
-        )
-        
-
-        # Ambil verdb terbaru
+        # finger_id = user_id
         cur.execute(
             """
-            SELECT COALESCE(MAX(verdb), 0) FROM sync_changes
+            INSERT INTO fingerprint
+            (
+                user_id,
+                finger_id,
+                door_access
+            )
+            VALUES (%s,%s,%s)
+            ON CONFLICT DO NOTHING
+            """,
+            (
+                user_id,
+                user_id,
+                door_access
+            )
+        )
+
+        cur.execute(
+            """
+            SELECT COALESCE(MAX(verdb), 0)
+            FROM sync_changes
             """
         )
 
         latest_verdb = cur.fetchone()[0]
         new_verdb = latest_verdb + 1
 
-        # Catat perubahan untuk sinkronisasi ESP
         cur.execute(
             """
             INSERT INTO sync_changes
-            (user_id, action, verdb)
+            (
+                user_id,
+                action,
+                verdb
+            )
             VALUES (%s,%s,%s)
             """,
-            (user_id, "update", new_verdb)
+            (
+                user_id,
+                "update",
+                new_verdb
+            )
         )
 
         conn.commit()
@@ -68,7 +108,7 @@ def enroll_fingerprint():
             "status": "success",
             "message": "Fingerprint berhasil didaftarkan",
             "finger_id": user_id
-        })
+        }), 200
 
     except Exception as e:
 
@@ -84,12 +124,9 @@ def enroll_fingerprint():
         cur.close()
         conn.close()
 
-@finger_bp.route('/DeleteFingerprint', methods=['DELETE'])
-def delete_fingerprint():
-
-    data = request.get_json()
-
-    user_id = data.get("user_id")
+        
+@finger_bp.route('/users/<int:user_id>/fingerprint', methods=['DELETE'])
+def delete_fingerprint(user_id):
 
     conn = get_db_connection()
     cur = conn.cursor()

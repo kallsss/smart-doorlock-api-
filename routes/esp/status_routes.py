@@ -1,16 +1,15 @@
 from flask import Blueprint, request, jsonify
 from config.db import get_db_connection
-from datetime import datetime
-from modules.faceRecognition import FaceAuthenticator
 
 doorstatus_bp = Blueprint("status_bp", __name__)
 
-@doorstatus_bp.route('/UpdateDoorStatus', methods=['POST'])
+@doorstatus_bp.route('/doors/<int:door_id>/status', methods=['POST'])
 def update_door_status():
 
     data = request.get_json()
 
-    door_id = data.get("door_id")
+    door_id = request.view_args["door_id"]
+    
     ssid_wifi = data.get("ssid_wifi")
     battery = data.get("battery")
 

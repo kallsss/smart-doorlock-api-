@@ -1,13 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required
 from config.db import get_db_connection
-from datetime import datetime
-from modules.faceRecognition import FaceAuthenticator
-import bcrypt
 
-android_bp = Blueprint("android_bp", __name__)
+access_bp = Blueprint("access_bp", __name__)
 
-@android_bp.route('/GrantAccess', methods=['PUT'])
+@access_bp.route('/GrantAccess', methods=['PUT'])
 @jwt_required()
 def grant_access():
 
@@ -100,20 +97,23 @@ def grant_access():
         cur.close()
         conn.close()
 
-@android_bp.route('/RevokeAccess', methods=['PUT'])
+@access_bp.route('/RevokeAccess', methods=['PUT'])
 @jwt_required()
 def revoke_access():
 
     data = request.get_json()
 
     user_ids = data.get("user_ids")
-
-    if not user_ids:
-
-        user_id = data.get("user_id")
+    user_id = data.get("user_id")
 
     if user_id:
         user_ids = [int(user_id)]
+
+    if not user_ids:
+        return jsonify({
+        "status": "failed",
+        "message": "No user IDs provided"
+    }), 400
 
     conn = get_db_connection()
     cur = conn.cursor()

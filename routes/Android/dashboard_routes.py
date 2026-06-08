@@ -8,7 +8,7 @@ import bcrypt
 android_bp = Blueprint("android_bp", __name__)
 
 #REGISTRASI USER
-@android_bp.route('/RegisterUser', methods=['POST'])
+@android_bp.route('/users', methods=['POST'])
 def register_user():
 
     data = request.get_json()
@@ -75,7 +75,7 @@ def register_user():
         cur.close()
         conn.close()
 
-@android_bp.route('/register_admin', methods=['POST'])
+@android_bp.route('/admins', methods=['POST'])
 def register_admin():
 
     data = request.get_json()
@@ -117,39 +117,19 @@ def get_logs():
 
     conn = get_db_connection()
     cur = conn.cursor()
-
+    
     cur.execute(
         """
-        SELECT
-            log_access.id,
-            user_door.name,
-            log_access.method,
-            log_access.created_at
+        SELECT log_access.id, user_door.name, log_access.method, log_access.created_at
         FROM log_access
-
-        JOIN user_door
-        ON log_access.user_id = user_door.id
-
-        ORDER BY log_access.created_at ASC
+        JOIN user_door ON log_access.user_id = user_door.id
+        ORDER BY log_access.created_at DESC -- Urutkan dari yang terbaru
         """
     )
-
     rows = cur.fetchall()
-
-    data = []
-
-    for row in rows:
-
-        data.append({
-            "id": row[0],
-            "name": row[1],
-            "method": row[2],
-            "created_at": str(row[3])
-        })
-
+    data = [{"id": r[0], "name": r[1], "method": r[2], "created_at": str(r[3])} for r in rows]
     cur.close()
     conn.close()
-    
     return jsonify(data)
 
 
@@ -171,7 +151,7 @@ def get_users():
             EXISTS(SELECT 1 FROM fingerprint f WHERE f.user_id = u.id) as has_finger, -- index 6
             EXISTS(SELECT 1 FROM embeddings e WHERE e.user_id = u.id) as has_face     -- index 7
         FROM user_door u
-        ORDER BY u.created_at DESC
+        ORDER BY u.created_at ASC
         """
     )
 
@@ -201,11 +181,8 @@ def get_users():
     return jsonify(data)
 
 
-@android_bp.route('/UpdateUser', methods=['PUT'])
-@jwt_required()
-def update_user():
-
-    user_id = int(request.form.get("id"))
+@android_bp.route('/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
 
     name = request.form.get("name")
     pin = request.form.get("pin")
@@ -243,17 +220,13 @@ def update_user():
 
         # face masih ada dan upload foto baru
         elif has_face and len(image_files) > 0:
-
             FaceAuthenticator.delete_faces_db(
                 user_id
-            )
+        )
 
             for image_file in image_files:
-
                 image_path = f"temp_{image_file.filename}"
-
                 image_file.save(image_path)
-
                 session = FaceAuthenticator(
                     image_path,
                     "yunet",
@@ -321,7 +294,7 @@ def update_user():
         cur.close()
         conn.close()
 
-@android_bp.route('/DeleteUser/<int:user_id>', methods=['DELETE'])
+@android_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
 

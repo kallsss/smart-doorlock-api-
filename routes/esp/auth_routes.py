@@ -83,7 +83,7 @@ def check_auth(cur, auth_type, auth_data, door_access, image_file=None):
 
         return cur.fetchone()
 
-@espauth_bp.route('/AuthDoor', methods=['POST'])
+@espauth_bp.route('/auth', methods=['POST'])
 def auth_door():
 
     client_id = request.form.get("client_id")
