@@ -49,7 +49,7 @@ mtcnn==1.0.0
 mysql-connector-python==9.4.0
 namex==0.1.0
 numpy==2.0.0
-opencv-python==4.13.0.92
+opencv-python-headless==4.13.0.92
 opt_einsum==3.4.0
 optree==0.19.1
 packaging==24.1

@@ -5,4 +5,7 @@ __pycache__/
 .vscode/
 node_modules/
 
+faces_db/*
+imgs/*
+
 .env
