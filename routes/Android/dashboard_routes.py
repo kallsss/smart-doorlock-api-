@@ -4,6 +4,7 @@ from config.db import get_db_connection
 from datetime import datetime
 from modules.faceRecognition import FaceAuthenticator
 import bcrypt
+import os
 
 android_bp = Blueprint("android_bp", __name__)
 
@@ -159,20 +160,29 @@ def get_users():
     data = []
 
     for row in rows:
+        user_id = str(row[0])
         methods = []
         if row[3]: methods.append("rfid")  
         if row[4]: methods.append("pin")   
         if row[6]: methods.append("finger") 
         if row[7]: methods.append("face")   
 
+        face_count = 0
+        if row[7]: 
+            faces_dir = os.path.join(r'C:\faces_db', user_id)
+            if os.path.exists(faces_dir):
+                
+                face_count = len([f for f in os.listdir(faces_dir) if f.lower().endswith(('.jpeg', '.jpg'))])
+        
         data.append({
-            "id": str(row[0]),       
+            "id": user_id,       
             "name": row[1],
             "methods": methods,
             "created_at": str(row[2]),
             "door_access": int(row[5]) if row[5] is not None else 0, 
             "uid_rfid": row[3], 
-            "pin": row[4]
+            "pin": row[4],
+            "face_count": face_count # Kirim angka ini (misal 5) ke Android
         })
 
     cur.close()
