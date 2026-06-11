@@ -20,12 +20,23 @@ def register_face(user_id):
 
         image_files = request.files.getlist("image")
 
-        if len(image_files) != 3:
+                # Ambil daftar file
+        image_files = request.files.getlist("image")
+
+        # PERBAIKAN: Gunakan < 3, jangan != 3
+        if len(image_files) < 3:
             return jsonify({
                 "status": "failed",
-                "message": "Harus mengirim 3 foto wajah"
+                "message": "Harus mengirim minimal 3 foto wajah"
             }), 400
-
+            
+        # Jika ingin membatasi maksimal juga (opsional tapi disarankan)
+        if len(image_files) > 7:
+            return jsonify({
+                "status": "failed",
+                "message": "Maksimal 7 foto wajah"
+            }), 400
+        
         success_count = 0
 
         for image_file in image_files:
