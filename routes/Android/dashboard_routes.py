@@ -230,22 +230,19 @@ def update_user(user_id):
 
         # face masih ada dan upload foto baru
         elif has_face and len(image_files) > 0:
-            FaceAuthenticator.delete_faces_db(
-                user_id
-        )
+            #     FaceAuthenticator.delete_faces_db(
+            #         user_id
+            # ) 
 
             for image_file in image_files:
                 image_path = f"temp_{image_file.filename}"
                 image_file.save(image_path)
-                session = FaceAuthenticator(
-                    image_path,
-                    "yunet",
-                    "Facenet512"
-                )
+                session = FaceAuthenticator(image_path, "yunet", "Facenet512")
 
-                session.register_face_db(
-                    user_id
-                )
+                session.register_face_db(user_id)
+
+                if os.path.exists(image_path):
+                    os.remove(image_path)
 
         cur.execute(
             """
