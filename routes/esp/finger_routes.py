@@ -3,7 +3,7 @@ from config.db import get_db_connection
 from datetime import datetime
 from modules.faceRecognition import FaceAuthenticator
 
-ENROLL_FINGER = 32
+ENROLL_FINGER = 13
 
 finger_bp = Blueprint("finger_bp", __name__)
 
@@ -19,7 +19,7 @@ def enroll_fingerprint(user_id):
     if mode != ENROLL_FINGER:
         return jsonify({
             "status": "failed",
-            "message": "Mode harus ENROLL_FINGER (32)"
+            "message": "Mode harus ENROLL_FINGER (13)"
         }), 400
 
     if user_id is None:
@@ -49,7 +49,6 @@ def enroll_fingerprint(user_id):
         )
 
         user = cur.fetchone()
-
         if user is None:
             return jsonify({
                 "status": "failed",
@@ -88,18 +87,10 @@ def enroll_fingerprint(user_id):
         cur.execute(
             """
             INSERT INTO sync_changes
-            (
-                user_id,
-                action,
-                verdb
-            )
+            (user_id, action, verdb)
             VALUES (%s,%s,%s)
             """,
-            (
-                user_id,
-                "update",
-                new_verdb
-            )
+            (user_id, "update", new_verdb)
         )
 
         conn.commit()
@@ -120,11 +111,9 @@ def enroll_fingerprint(user_id):
         }), 500
 
     finally:
-
         cur.close()
         conn.close()
 
-        
 @finger_bp.route('/users/<int:user_id>/fingerprint', methods=['DELETE'])
 def delete_fingerprint(user_id):
 
