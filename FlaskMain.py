@@ -34,7 +34,6 @@ app.register_blueprint(finger_bp)
 app.register_blueprint(doorstatus_bp)
 app.register_blueprint(facerecog_bp)
 
-
 if __name__ == "__main__":
 
     print("Loading Face Recognition Models...")
