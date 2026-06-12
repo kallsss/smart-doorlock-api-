@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from modules.faceRecognition import FaceAuthenticator
+from config.db import get_db_connection
 import os
 
 facerecog_bp = Blueprint("facerecog_bp", __name__)
@@ -20,15 +21,12 @@ def register_face(user_id):
 
         image_files = request.files.getlist("image")
 
-                # Ambil daftar file
-        image_files = request.files.getlist("image")
-
-        # PERBAIKAN: Gunakan < 3, jangan != 3
-        if len(image_files) < 3:
+       # Diubah ke < 1 agar bisa menerima penambahan foto satuan (increment 1)
+        if len(image_files) < 1:
             return jsonify({
-                "status": "failed",
-                "message": "Harus mengirim minimal 3 foto wajah"
-            }), 400
+            "status": "failed",
+            "message": "Harus mengirim minimal 1 foto wajah"
+        }), 400
             
         # Jika ingin membatasi maksimal juga (opsional tapi disarankan)
         if len(image_files) > 7:
@@ -74,26 +72,19 @@ def register_face(user_id):
 #DELETE FACE
 @facerecog_bp.route('/users/<int:user_id>/face', methods=['DELETE'])
 def delete_face(user_id):
-
-    if not user_id:
-        return jsonify({
-            "status": "failed",
-            "message": "user_id wajib diisi"
-        }), 400
-
     try:
-
+        # 1. Hapus file fisik (folder)
         FaceAuthenticator.delete_faces_db(user_id)
 
-        return jsonify({
-            "status": "success",
-            "message": f"Face user {user_id} berhasil dihapus"
-        })
+        # 2. Hapus data di database (WAJIB agar count jadi 0)
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("DELETE FROM embeddings WHERE user_id=%s", (user_id,))
+        cur.execute("UPDATE user_door SET face_recog=false WHERE id=%s", (user_id,))
+        conn.commit()
+        cur.close()
+        conn.close()
 
+        return jsonify({"status": "success", "message": "Folder dan Database wajah dibersihkan"})
     except Exception as e:
-
-        return jsonify({
-            "status": "failed",
-            "message": str(e)
-        }), 500 
-    
+        return jsonify({"status": "failed", "message": str(e)}), 500
